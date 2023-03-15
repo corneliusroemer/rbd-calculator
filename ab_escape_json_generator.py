@@ -4,6 +4,8 @@ import numpy as np
 from collections import defaultdict
 import json
 
+from tqdm import tqdm
+
 #%%
 d = pd.read_csv(
     "https://raw.githubusercontent.com/jbloomlab/SARS2_RBD_Ab_escape_maps/main/processed_data/escape_calculator_data.csv",
@@ -40,7 +42,7 @@ PVLKGVKLHYT\
 print(wuhan)
 
 #%%
-known_to_neutralize = "Omicron BA.2"
+known_to_neutralize = "BA.2"
 escape_strength = 2
 precision = 5
 
@@ -51,15 +53,7 @@ subset = d.loc[
 subset
 #%%
 # Extract the right data from `;` separated column
-subset.apply(
-    lambda x: float(
-        x.neg_log_IC50.split(";")[
-            x.known_to_neutralize.split(";").index(known_to_neutralize)
-        ]
-    ),
-    axis=1,
-)
-#%%
+# neg log IC50 of given antibody with respect to "known_to_neutralize"
 
 subset["focal_neg_log_IC50"] = subset.apply(
     lambda x: float(
@@ -69,7 +63,7 @@ subset["focal_neg_log_IC50"] = subset.apply(
     ),
     axis=1,
 )
-
+subset
 #%%
 # Calculate binding strength remaining in focal?
 # Is escape measured in all together and only biased by the focal?
@@ -82,9 +76,10 @@ escape_data = defaultdict(dict)
 for datum in subset.itertuples():
     escape_data[datum.condition][datum.site] = datum.escape
 
-escape_data
 #%%
 total_weight = sum(list(neg_log_IC50.values()))
+total_weight
+#%%
 
 nextclade_escape_data = {
     "data": [
@@ -119,6 +114,6 @@ nextclade_escape_data = {
 }
 
 with open("escape_data.json", "w") as fh:
-    json.dump(nextclade_escape_data, fh)
+    json.dump(nextclade_escape_data, fh, indent=2)
 
 # %%
